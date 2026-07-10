@@ -52,12 +52,21 @@ I = diags([np.ones(N_points)], offsets=[0], format="csc")
 A = I + 1j * dt / 2 * H
 B = I - 1j * dt / 2 * H
 
-# --- Делаем ОДИН шаг по времени ---
-psi1 = spsolve(A, B @ psi0)
+# --- Цикл эволюции по времени ---
+n_steps = 2000     # сколько шагов сделать всего
+psi = psi0.copy()  # текущее состояние, будет обновляться на каждом шаге
 
-# --- Проверяем норму после шага (должна остаться ~1.0) ---
-norm_after_step = np.sum(np.abs(psi1)**2) * dx
-print(f"Норма после одного шага CN: {norm_after_step:.6f}")
+norm_history = []  # сюда будем складывать норму на каждом шаге — для проверки
+
+for step in range(n_steps):
+    psi = spsolve(A, B @ psi)
+    current_norm = np.sum(np.abs(psi)**2) * dx
+    norm_history.append(current_norm)
+
+print(f"Норма в начале: {norm_history[0]:.6f}")
+print(f"Норма в конце ({n_steps} шагов): {norm_history[-1]:.6f}")
+print(f"Максимальное отклонение нормы: {max(abs(n - 1.0) for n in norm_history):.2e}")
+
 # --- График: пакет и барьер вместе ---
 fig, ax1 = plt.subplots(figsize=(8, 4))
 
