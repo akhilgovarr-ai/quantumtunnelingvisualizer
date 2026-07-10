@@ -52,11 +52,23 @@ I = diags([np.ones(N_points)], offsets=[0], format="csc")
 A = I + 1j * dt / 2 * H
 B = I - 1j * dt / 2 * H
 
-# --- Цикл эволюции по времени ---
-n_steps = 2000     # сколько шагов сделать всего
-psi = psi0.copy()  # текущее состояние, будет обновляться на каждом шаге
+# --- Цикл эволюции по времени (с сохранением кадров для анимации) ---
+n_steps = 2000
+save_every = 20   # сохранять кадр каждые 20 шагов
+psi = psi0.copy()
 
-norm_history = []  # сюда будем складывать норму на каждом шаге — для проверки
+norm_history = []
+frames = [np.abs(psi)**2]   # первый кадр — начальное состояние
+
+for step in range(n_steps):
+    psi = spsolve(A, B @ psi)
+    current_norm = np.sum(np.abs(psi)**2) * dx
+    norm_history.append(current_norm)
+
+    if (step + 1) % save_every == 0:
+        frames.append(np.abs(psi)**2)
+
+print(f"Сохранено кадров для анимации: {len(frames)}")
 
 for step in range(n_steps):
     psi = spsolve(A, B @ psi)
@@ -73,6 +85,31 @@ reflected = np.sum(np.abs(psi[x < barrier_start])**2) * dx
 
 print(f"Вероятность прохождения (туннелирование): {transmitted:.4f}")
 print(f"Вероятность отражения: {reflected:.4f}")
+
+# --- Создаём анимацию ---
+from matplotlib.animation import FuncAnimation, PillowWriter
+
+fig_anim, ax_anim = plt.subplots(figsize=(9, 4.5))
+
+line_psi, = ax_anim.plot(x, frames[0], color="tab:blue", label=r"$|\psi(x,t)|^2$")
+ax_anim.plot(x, V / V0 * max(frames[0]) * 3, color="tab:red", linestyle="--", label="барьер (V(x), масштаб условный)")
+ax_anim.set_xlabel("x")
+ax_anim.set_ylabel(r"$|\psi(x,t)|^2$")
+ax_anim.set_ylim(0, max(frames[0]) * 1.3)
+ax_anim.legend(loc="upper right")
+title_anim = ax_anim.set_title("t = 0.00")
+
+def update(frame_index):
+    line_psi.set_ydata(frames[frame_index])
+    title_anim.set_text(f"t = {frame_index * save_every * dt:.2f}")
+    return line_psi, title_anim
+
+anim = FuncAnimation(fig_anim, update, frames=len(frames), interval=50, blit=False)
+
+anim.save("figures/tunneling_animation.gif", writer=PillowWriter(fps=20))
+print("Анимация сохранена: figures/tunneling_animation.gif")
+
+plt.close(fig_anim)
 
 # --- График: начальное и финальное состояние + барьер ---
 fig, ax1 = plt.subplots(figsize=(9, 4.5))
