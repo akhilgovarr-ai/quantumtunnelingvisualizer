@@ -67,20 +67,29 @@ print(f"Норма в начале: {norm_history[0]:.6f}")
 print(f"Норма в конце ({n_steps} шагов): {norm_history[-1]:.6f}")
 print(f"Максимальное отклонение нормы: {max(abs(n - 1.0) for n in norm_history):.2e}")
 
-# --- График: пакет и барьер вместе ---
-fig, ax1 = plt.subplots(figsize=(8, 4))
+# --- Разделяем финальную волновую функцию на "прошло" и "отразилось" ---
+transmitted = np.sum(np.abs(psi[x > barrier_start + barrier_width])**2) * dx
+reflected = np.sum(np.abs(psi[x < barrier_start])**2) * dx
 
-ax1.plot(x, np.abs(psi0)**2, color="tab:blue", label=r"$|\psi(x,0)|^2$")
+print(f"Вероятность прохождения (туннелирование): {transmitted:.4f}")
+print(f"Вероятность отражения: {reflected:.4f}")
+
+# --- График: начальное и финальное состояние + барьер ---
+fig, ax1 = plt.subplots(figsize=(9, 4.5))
+
+ax1.plot(x, np.abs(psi0)**2, color="tab:blue", alpha=0.5, linestyle=":", label=r"$|\psi(x,0)|^2$ (начало)")
+ax1.plot(x, np.abs(psi)**2, color="tab:blue", label=rf"$|\psi(x,t={n_steps*dt:.1f})|^2$ (конец)")
 ax1.set_xlabel("x")
-ax1.set_ylabel(r"$|\psi(x,0)|^2$", color="tab:blue")
+ax1.set_ylabel(r"$|\psi(x,t)|^2$", color="tab:blue")
 ax1.tick_params(axis="y", labelcolor="tab:blue")
+ax1.legend(loc="upper left")
 
 ax2 = ax1.twinx()
 ax2.plot(x, V, color="tab:red", linestyle="--", label="V(x)")
 ax2.set_ylabel("V(x)", color="tab:red")
 ax2.tick_params(axis="y", labelcolor="tab:red")
 
-plt.title("Начальный волновой пакет и потенциальный барьер")
+plt.title(f"Туннелирование через барьер (T={transmitted:.3f}, R={reflected:.3f})")
 fig.tight_layout()
-plt.savefig("figures/wavepacket_and_barrier.png", dpi=150)
+plt.savefig("figures/tunneling_result.png", dpi=150)
 plt.show()
