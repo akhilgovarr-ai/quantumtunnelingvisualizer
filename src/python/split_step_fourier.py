@@ -34,7 +34,7 @@ print(f"Норма пакета: {check_norm:.6f}")
 
 # --- Параметры временной эволюции ---
 dt = 0.01
-n_steps = 2000
+n_steps = 400
 
 # --- Волновые числа k для FFT ---
 # np.fft.fftfreq даёт частоты в специальном порядке, подходящем для FFT/IFFT
@@ -43,22 +43,40 @@ k = 2 * np.pi * np.fft.fftfreq(N, d=dx)
 print(f"Диапазон k: от {k.min():.2f} до {k.max():.2f}")
 print(f"Количество точек k: {len(k)}")
 
-# --- Один шаг эволюции методом Split-Step Fourier ---
+# --- Цикл эволюции методом Split-Step Fourier (с сохранением кадров) ---
+save_every = 20
+psi = psi0.copy()
 
-# Полшага по потенциалу (в координатном пространстве x)
-psi_half = psi0 * np.exp(-1j * V * dt / 2)
+norm_history = []
+frames = [np.abs(psi)**2]
 
-# Полный шаг по кинетике (переходим в пространство k через FFT)
-psi_k = np.fft.fft(psi_half)
-psi_k = psi_k * np.exp(-1j * k**2 * dt / 2)
-psi_half2 = np.fft.ifft(psi_k)
+for step in range(n_steps):
+    # полшага по потенциалу
+    psi = psi * np.exp(-1j * V * dt / 2)
+    # полный шаг по кинетике через FFT
+    psi_k = np.fft.fft(psi)
+    psi_k = psi_k * np.exp(-1j * k**2 * dt / 2)
+    psi = np.fft.ifft(psi_k)
+    # ещё полшага по потенциалу
+    psi = psi * np.exp(-1j * V * dt / 2)
 
-# Ещё полшага по потенциалу
-psi1 = psi_half2 * np.exp(-1j * V * dt / 2)
+    current_norm = np.sum(np.abs(psi)**2) * dx
+    norm_history.append(current_norm)
 
-# --- Проверяем норму после одного шага ---
-norm_after_step = np.sum(np.abs(psi1)**2) * dx
-print(f"Норма после одного шага SSF: {norm_after_step:.6f}")
+    if (step + 1) % save_every == 0:
+        frames.append(np.abs(psi)**2)
+
+print(f"Норма в начале: {norm_history[0]:.6f}")
+print(f"Норма в конце ({n_steps} шагов): {norm_history[-1]:.6f}")
+print(f"Максимальное отклонение нормы: {max(abs(n - 1.0) for n in norm_history):.2e}")
+print(f"Сохранено кадров для анимации: {len(frames)}")
+
+# --- Вероятность прохождения и отражения ---
+transmitted = np.sum(np.abs(psi[x > barrier_start + barrier_width])**2) * dx
+reflected = np.sum(np.abs(psi[x < barrier_start])**2) * dx
+
+print(f"Вероятность прохождения (туннелирование): {transmitted:.4f}")
+print(f"Вероятность отражения: {reflected:.4f}")
 
 # --- График: пакет и барьер вместе (проверка, что стартовые условия совпадают с CN) ---
 fig, ax1 = plt.subplots(figsize=(8, 4))
