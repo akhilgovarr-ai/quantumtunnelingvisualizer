@@ -103,20 +103,22 @@ print("Анимация SSF сохранена: figures/ssf_tunneling_animation.
 
 plt.close(fig_anim)
 
-# --- График: пакет и барьер вместе (проверка, что стартовые условия совпадают с CN) ---
-fig, ax1 = plt.subplots(figsize=(8, 4))
+# --- График: начальное и финальное состояние + барьер (SSF) ---
+fig, ax1 = plt.subplots(figsize=(9, 4.5))
 
-ax1.plot(x, np.abs(psi0)**2, color="tab:blue", label=r"$|\psi(x,0)|^2$")
+ax1.plot(x, np.abs(psi0)**2, color="tab:green", alpha=0.5, linestyle=":", label=r"$|\psi(x,0)|^2$ (начало)")
+ax1.plot(x, np.abs(psi)**2, color="tab:green", label=rf"$|\psi(x,t={n_steps*dt:.1f})|^2$ (конец, SSF)")
 ax1.set_xlabel("x")
-ax1.set_ylabel(r"$|\psi(x,0)|^2$", color="tab:blue")
-ax1.tick_params(axis="y", labelcolor="tab:blue")
+ax1.set_ylabel(r"$|\psi(x,t)|^2$", color="tab:green")
+ax1.tick_params(axis="y", labelcolor="tab:green")
+ax1.legend(loc="upper left")
 
 ax2 = ax1.twinx()
 ax2.plot(x, V, color="tab:red", linestyle="--", label="V(x)")
 ax2.set_ylabel("V(x)", color="tab:red")
 ax2.tick_params(axis="y", labelcolor="tab:red")
 
-plt.title("SSF: начальный волновой пакет и барьер (та же настройка, что и CN)")
+plt.title(f"SSF: Туннелирование через барьер (T={transmitted:.3f}, R={reflected:.3f})")
 fig.tight_layout()
-plt.savefig("figures/ssf_initial_setup.png", dpi=150)
+plt.savefig("figures/ssf_tunneling_result.png", dpi=150)
 plt.show()
