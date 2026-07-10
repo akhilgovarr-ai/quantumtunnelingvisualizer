@@ -31,7 +31,33 @@ psi0 = psi0 / norm
 # --- Проверка нормировки ---
 check_norm = np.sum(np.abs(psi0)**2) * dx
 print(f"Норма пакета: {check_norm:.6f}")  # должно быть очень близко к 1.0
+# --- Параметры временной эволюции ---
+dt = 0.01        # маленький шаг по времени
+hbar = 1.0       # безразмерные единицы
+m = 1.0
 
+# --- Собираем гамильтониан H в виде трёх диагоналей ---
+# H действует так: (H*psi)_j = -0.5/dx^2 * (psi[j+1] - 2*psi[j] + psi[j-1]) + V[j]*psi[j]
+from scipy.sparse import diags
+from scipy.sparse.linalg import spsolve
+
+N_points = len(x)
+main_diag = V + 1.0 / dx**2          # главная диагональ H
+off_diag = -0.5 / dx**2 * np.ones(N_points - 1)   # соседние диагонали H
+
+H = diags([off_diag, main_diag, off_diag], offsets=[-1, 0, 1], format="csc")
+
+# --- Собираем матрицы A и B схемы Кранка-Николсон ---
+I = diags([np.ones(N_points)], offsets=[0], format="csc")
+A = I + 1j * dt / 2 * H
+B = I - 1j * dt / 2 * H
+
+# --- Делаем ОДИН шаг по времени ---
+psi1 = spsolve(A, B @ psi0)
+
+# --- Проверяем норму после шага (должна остаться ~1.0) ---
+norm_after_step = np.sum(np.abs(psi1)**2) * dx
+print(f"Норма после одного шага CN: {norm_after_step:.6f}")
 # --- График: пакет и барьер вместе ---
 fig, ax1 = plt.subplots(figsize=(8, 4))
 
