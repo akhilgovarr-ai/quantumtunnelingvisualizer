@@ -13,6 +13,14 @@ x0 = -10.0          # начальный центр пакета (слева, ч
 sigma = 1.0         # ширина пакета
 k0 = 5.0            # начальный "импульс" (задаёт скорость движения пакета)
 
+# --- Параметры барьера ---
+V0 = 15.0        # высота барьера (чем больше, тем сильнее отражение)
+barrier_start = 0.0    # где начинается барьер
+barrier_width = 1.0    # ширина барьера
+
+# --- Строим потенциал V(x): 0 везде, кроме области барьера ---
+V = np.zeros_like(x)
+V[(x >= barrier_start) & (x <= barrier_start + barrier_width)] = V0
 # --- Собираем гауссов волновой пакет ---
 psi0 = np.exp(-(x - x0)**2 / (4 * sigma**2)) * np.exp(1j * k0 * x)
 
@@ -24,13 +32,20 @@ psi0 = psi0 / norm
 check_norm = np.sum(np.abs(psi0)**2) * dx
 print(f"Норма пакета: {check_norm:.6f}")  # должно быть очень близко к 1.0
 
-# --- График ---
-plt.figure(figsize=(8, 4))
-plt.plot(x, np.abs(psi0)**2, label=r"$|\psi(x,0)|^2$")
-plt.xlabel("x")
-plt.ylabel("плотность вероятности")
-plt.title("Начальный гауссов волновой пакет")
-plt.legend()
-plt.grid(True)
-plt.savefig("figures/initial_wavepacket.png", dpi=150)
+# --- График: пакет и барьер вместе ---
+fig, ax1 = plt.subplots(figsize=(8, 4))
+
+ax1.plot(x, np.abs(psi0)**2, color="tab:blue", label=r"$|\psi(x,0)|^2$")
+ax1.set_xlabel("x")
+ax1.set_ylabel(r"$|\psi(x,0)|^2$", color="tab:blue")
+ax1.tick_params(axis="y", labelcolor="tab:blue")
+
+ax2 = ax1.twinx()
+ax2.plot(x, V, color="tab:red", linestyle="--", label="V(x)")
+ax2.set_ylabel("V(x)", color="tab:red")
+ax2.tick_params(axis="y", labelcolor="tab:red")
+
+plt.title("Начальный волновой пакет и потенциальный барьер")
+fig.tight_layout()
+plt.savefig("figures/wavepacket_and_barrier.png", dpi=150)
 plt.show()
