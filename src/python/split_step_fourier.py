@@ -78,6 +78,31 @@ reflected = np.sum(np.abs(psi[x < barrier_start])**2) * dx
 print(f"Вероятность прохождения (туннелирование): {transmitted:.4f}")
 print(f"Вероятность отражения: {reflected:.4f}")
 
+# --- Создаём анимацию ---
+from matplotlib.animation import FuncAnimation, PillowWriter
+
+fig_anim, ax_anim = plt.subplots(figsize=(9, 4.5))
+
+line_psi, = ax_anim.plot(x, frames[0], color="tab:green", label=r"$|\psi(x,t)|^2$ (SSF)")
+ax_anim.plot(x, V / V0 * max(frames[0]) * 3, color="tab:red", linestyle="--", label="барьер (V(x), масштаб условный)")
+ax_anim.set_xlabel("x")
+ax_anim.set_ylabel(r"$|\psi(x,t)|^2$")
+ax_anim.set_ylim(0, max(frames[0]) * 1.3)
+ax_anim.legend(loc="upper right")
+title_anim = ax_anim.set_title("t = 0.00")
+
+def update(frame_index):
+    line_psi.set_ydata(frames[frame_index])
+    title_anim.set_text(f"t = {frame_index * save_every * dt:.2f}")
+    return line_psi, title_anim
+
+anim = FuncAnimation(fig_anim, update, frames=len(frames), interval=50, blit=False)
+
+anim.save("figures/ssf_tunneling_animation.gif", writer=PillowWriter(fps=20))
+print("Анимация SSF сохранена: figures/ssf_tunneling_animation.gif")
+
+plt.close(fig_anim)
+
 # --- График: пакет и барьер вместе (проверка, что стартовые условия совпадают с CN) ---
 fig, ax1 = plt.subplots(figsize=(8, 4))
 
