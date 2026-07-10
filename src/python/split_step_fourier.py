@@ -43,6 +43,23 @@ k = 2 * np.pi * np.fft.fftfreq(N, d=dx)
 print(f"Диапазон k: от {k.min():.2f} до {k.max():.2f}")
 print(f"Количество точек k: {len(k)}")
 
+# --- Один шаг эволюции методом Split-Step Fourier ---
+
+# Полшага по потенциалу (в координатном пространстве x)
+psi_half = psi0 * np.exp(-1j * V * dt / 2)
+
+# Полный шаг по кинетике (переходим в пространство k через FFT)
+psi_k = np.fft.fft(psi_half)
+psi_k = psi_k * np.exp(-1j * k**2 * dt / 2)
+psi_half2 = np.fft.ifft(psi_k)
+
+# Ещё полшага по потенциалу
+psi1 = psi_half2 * np.exp(-1j * V * dt / 2)
+
+# --- Проверяем норму после одного шага ---
+norm_after_step = np.sum(np.abs(psi1)**2) * dx
+print(f"Норма после одного шага SSF: {norm_after_step:.6f}")
+
 # --- График: пакет и барьер вместе (проверка, что стартовые условия совпадают с CN) ---
 fig, ax1 = plt.subplots(figsize=(8, 4))
 
