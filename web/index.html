@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Квантовое туннелирование — визуализатор</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f1117;
+      color: #e6e6e6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    canvas {
+      background: #1a1d27;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 20px;
+      max-width: 700px;
+      justify-content: center;
+    }
+    .control {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Квантовое туннелирование через барьер</h1>
+  <p>Метод Кранка–Николсон, 1D нестационарное уравнение Шрёдингера</p>
+
+  <canvas id="canvas" width="800" height="400"></canvas>
+
+  <div class="controls">
+    <div class="control">
+      <label for="v0">Высота барьера V0: <span id="v0-value">15</span></label>
+      <input type="range" id="v0" min="0" max="30" step="0.5" value="15">
+    </div>
+    <div class="control">
+      <label for="width">Ширина барьера: <span id="width-value">1.0</span></label>
+      <input type="range" id="width" min="0.2" max="5" step="0.1" value="1.0">
+    </div>
+    <div class="control">
+      <label for="k0">Начальная скорость k0: <span id="k0-value">5</span></label>
+      <input type="range" id="k0" min="1" max="10" step="0.5" value="5">
+    </div>
+  </div>
+
+  <button id="startBtn">Запустить</button>
+  <button id="resetBtn">Сбросить</button>
+
+  <script src="solver.js"></script>
+  <script src="render.js"></script>
+</body>
+</html>
