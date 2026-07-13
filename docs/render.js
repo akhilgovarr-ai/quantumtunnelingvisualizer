@@ -22,7 +22,67 @@ function readParams() {
 // ============================================================
 let solver = new QuantumSolver(readParams());
 let isRunning = false;
-let animationId = null;
+
+// ============================================================
+// Пресеты реальных систем (иллюстративные пропорции, не точные данные)
+// ============================================================
+const PRESETS = {
+  sun: {
+    V0: 25, barrierWidth: 0.5, k0: 3,
+    caption: "Внутри Солнца ядра атомов водорода должны преодолеть взаимное отталкивание, чтобы слиться. Энергии почти не хватает — поэтому термоядерная реакция в одном конкретном ядре происходит крайне редко, но звёзд и ядер очень много."
+  },
+  flash: {
+    V0: 15, barrierWidth: 0.3, k0: 5,
+    caption: "Во флеш-памяти электроны туннелируют сквозь тонкий изолирующий слой, чтобы записаться в ячейку памяти. Слой специально делают тонким — именно поэтому это вообще возможно."
+  },
+  stm: {
+    V0: 10, barrierWidth: 0.2, k0: 4,
+    caption: "Сканирующий туннельный микроскоп подводит иглу почти вплотную к поверхности. Электроны туннелируют через промежуток между иглой и атомами — и по силе туннельного тока можно увидеть отдельные атомы."
+  },
+  alpha: {
+    V0: 20, barrierWidth: 2.5, k0: 2,
+    caption: "При альфа-распаде частица внутри ядра урана заперта барьером ядерных сил. Барьер широкий, поэтому распад одного конкретного ядра — редкое событие, которое может ждать своего часа тысячи лет."
+  },
+};
+
+document.querySelectorAll(".preset").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const preset = PRESETS[btn.dataset.preset];
+    document.getElementById("v0").value = preset.V0;
+    document.getElementById("width").value = preset.barrierWidth;
+    document.getElementById("k0").value = preset.k0;
+    document.getElementById("v0-value").textContent = preset.V0;
+    document.getElementById("width-value").textContent = preset.barrierWidth;
+    document.getElementById("k0-value").textContent = preset.k0;
+    document.getElementById("preset-caption").textContent = preset.caption;
+
+    document.querySelectorAll(".preset").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    isRunning = false;
+    document.getElementById("startBtn").textContent = "Запустить";
+    solver.setParams(readParams());
+    solver.reset();
+    drawFrame();
+  });
+});
+
+// ============================================================
+// Живая вероятность прохождения/отражения
+// ============================================================
+function computeTR() {
+  const density = solver.getProbabilityDensity();
+  const barrierEnd = solver.barrierStart + solver.barrierWidth;
+  let transmitted = 0;
+  let reflected = 0;
+  for (let i = 0; i < solver.N; i++) {
+    if (solver.x[i] > barrierEnd) transmitted += density[i];
+    else if (solver.x[i] < solver.barrierStart) reflected += density[i];
+  }
+  transmitted *= solver.dx;
+  reflected *= solver.dx;
+  return { transmitted, reflected };
+}
 
 // ============================================================
 // Рисование одного кадра
@@ -33,16 +93,14 @@ function drawFrame() {
   const density = solver.getProbabilityDensity();
   const maxDensity = Math.max(...density);
   const V = solver.V;
-  const maxV = Math.max(...V, 1); // избегаем деления на 0, если V0=0
+  const maxV = 30; // фиксированный максимум = верхняя граница слайдера, чтобы высота барьера реально менялась с V0
 
-  // --- координаты: переводим x из физических единиц в пиксели canvas ---
   function xToPixel(xVal) {
     return ((xVal - solver.xMin) / (solver.xMax - solver.xMin)) * W;
   }
 
-  // --- рисуем барьер (красным, снизу вверх, полупрозрачным) ---
   ctx.beginPath();
-  ctx.strokeStyle = "rgba(255, 90, 90, 0.9)";
+  ctx.strokeStyle = "rgba(255, 138, 102, 0.9)";
   ctx.lineWidth = 2;
   for (let i = 0; i < solver.N; i++) {
     const px = xToPixel(solver.x[i]);
@@ -52,9 +110,8 @@ function drawFrame() {
   }
   ctx.stroke();
 
-  // --- рисуем |psi|^2 (синим) ---
   ctx.beginPath();
-  ctx.strokeStyle = "rgba(90, 160, 255, 1)";
+  ctx.strokeStyle = "rgba(139, 127, 255, 1)";
   ctx.lineWidth = 2;
   for (let i = 0; i < solver.N; i++) {
     const px = xToPixel(solver.x[i]);
@@ -64,11 +121,17 @@ function drawFrame() {
   }
   ctx.stroke();
 
-  // --- подпись времени ---
-  ctx.fillStyle = "#e6e6e6";
-  ctx.font = "14px system-ui";
-  ctx.fillText(`t = ${solver.time.toFixed(2)}`, 10, 20);
-  ctx.fillText(`норма = ${solver.getNorm().toFixed(4)}`, 10, 40);
+  document.getElementById("time-readout").textContent = `t = ${solver.time.toFixed(2)}`;
+  document.getElementById("norm-readout").textContent = `вероятность = ${solver.getNorm().toFixed(4)}`;
+
+  const { transmitted, reflected } = computeTR();
+  const total = transmitted + reflected;
+  const tPct = total > 0 ? (transmitted / (transmitted + reflected + 1e-9)) * 100 : 0;
+
+  document.getElementById("prob-fill-t").style.width = `${Math.min(tPct, 100)}%`;
+  document.getElementById("prob-fill-r").style.width = `${Math.max(100 - tPct, 0)}%`;
+  document.getElementById("prob-t").textContent = `${(transmitted * 100).toFixed(1)}%`;
+  document.getElementById("prob-r").textContent = `${(reflected * 100).toFixed(1)}%`;
 }
 
 // ============================================================
@@ -76,14 +139,11 @@ function drawFrame() {
 // ============================================================
 function animate() {
   if (!isRunning) return;
-
-  // несколько шагов за кадр, чтобы движение было заметным (иначе слишком медленно)
   for (let i = 0; i < 5; i++) {
     solver.step();
   }
-
   drawFrame();
-  animationId = requestAnimationFrame(animate);
+  requestAnimationFrame(animate);
 }
 
 // ============================================================
@@ -108,12 +168,11 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   drawFrame();
 });
 
-// ============================================================
-// Обработчики слайдеров — обновляют подписи и пересоздают солвер
-// ============================================================
 ["v0", "width", "k0"].forEach((id) => {
   document.getElementById(id).addEventListener("input", () => {
     document.getElementById(id + "-value").textContent = document.getElementById(id).value;
+    document.querySelectorAll(".preset").forEach((b) => b.classList.remove("active"));
+    document.getElementById("preset-caption").textContent = "Настрой параметры вручную ползунками или выбери готовый сценарий — пропорции энергии к барьеру подобраны для наглядности, не для точности.";
     isRunning = false;
     document.getElementById("startBtn").textContent = "Запустить";
     solver.setParams(readParams());
@@ -122,5 +181,4 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   });
 });
 
-// --- первая отрисовка при загрузке страницы ---
 drawFrame();
