@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Квантовое туннелирование — как частица проходит сквозь стену</title>
+<meta name="description" content="Интерактивная визуализация квантового туннелирования: как частица проходит сквозь барьер, который классически преодолеть не может. Расчёт в реальном времени методом Кранка-Николсон.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230B0F1E'/%3E%3Cpath d='M10 60 Q30 20 50 60 T90 60' stroke='%238B7FFF' stroke-width='6' fill='none'/%3E%3Crect x='55' y='20' width='8' height='60' fill='%23FF8A66'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -88,6 +90,18 @@
     filter: drop-shadow(0 0 24px rgba(139, 127, 255, 0.08));
   }
 
+  .disclaimer {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(139, 127, 255, 0.08);
+    border: 1px solid rgba(139, 127, 255, 0.25);
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-dim);
+  }
+  .disclaimer strong { color: var(--wave); }
+
   @media (max-width: 480px) {
     .stage { padding: 18px; }
     h1 { font-size: 28px; }
@@ -137,23 +151,42 @@
   }
   button {
     font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  #startBtn, #resetBtn {
     font-weight: 600;
-    font-size: 14px;
-    padding: 12px 22px;
+    font-size: 15px;
+    padding: 13px 26px;
     border-radius: 9px;
     border: 1px solid var(--line);
     background: transparent;
     color: var(--text);
-    cursor: pointer;
-    transition: all 0.15s ease;
   }
-  button:hover { border-color: var(--wave-soft); color: var(--wave); }
+  #startBtn:hover, #resetBtn:hover { border-color: var(--wave-soft); color: var(--wave); }
   #startBtn {
     background: var(--wave-soft);
     border-color: var(--wave-soft);
     color: #0B0F1E;
   }
   #startBtn:hover { background: var(--wave); color: #0B0F1E; }
+
+  .preset {
+    font-size: 13px;
+    font-weight: 500;
+    padding: 9px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    background: var(--bg-panel-2);
+    color: var(--text-dim);
+  }
+  .preset:hover { border-color: var(--wave-soft); color: var(--wave); }
+  .preset.active {
+    border-color: var(--wave);
+    color: var(--wave);
+    background: rgba(139, 127, 255, 0.1);
+  }
 
   /* ---------- CONTENT SECTIONS ---------- */
   .content {
@@ -283,7 +316,7 @@
   <div class="stage">
     <canvas id="canvas" width="800" height="360"></canvas>
 
-    <div class="readout">
+    <div class="readout" aria-live="polite" role="status"></div>
       <div><span id="time-readout">t = 0.00</span></div>
       <div><span id="norm-readout">вероятность = 1.0000</span></div>
     </div>
@@ -292,7 +325,7 @@
       <div class="prob-fill-r" id="prob-fill-r" style="width:100%"></div>
       <div class="prob-fill-t" id="prob-fill-t" style="width:0%"></div>
     </div>
-    <div class="prob-labels">
+    <div class="prob-labels" aria-live="polite" role="status"></div>
       <span>Отразилось: <strong id="prob-r">—</strong></span>
       <span>Прошло сквозь барьер: <strong id="prob-t">—</strong></span>
     </div>
@@ -305,7 +338,11 @@
         <button class="preset" data-preset="stm">🔬 Туннельный микроскоп</button>
         <button class="preset" data-preset="alpha">☢ Альфа-распад</button>
       </div>
-      <p class="preset-caption" id="preset-caption">Настрой параметры вручную ползунками или выбери готовый сценарий — пропорции энергии к барьеру подобраны для наглядности, не для точности.</p>
+      <p class="preset-caption" id="preset-caption">Выбери готовый сценарий — или настрой параметры сама.</p>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Важно:</strong> числа на слайдерах — условные, безразмерные величины модели, а не вольты или нанометры. Сравнивать стоит только пропорции (во сколько раз барьер выше энергии частицы), а не абсолютные значения.
     </div>
 
     <div class="controls">
