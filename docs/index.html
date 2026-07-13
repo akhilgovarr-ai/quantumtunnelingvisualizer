@@ -1,69 +1,397 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Квантовое туннелирование — визуализатор</title>
-  <style>
-    body {
-      font-family: system-ui, sans-serif;
-      background: #0f1117;
-      color: #e6e6e6;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-    canvas {
-      background: #1a1d27;
-      border-radius: 8px;
-      margin-top: 20px;
-    }
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      margin-top: 20px;
-      max-width: 700px;
-      justify-content: center;
-    }
-    .control {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Квантовое туннелирование — как частица проходит сквозь стену</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0F1E;
+    --bg-panel: #131A2E;
+    --bg-panel-2: #0F1526;
+    --wave: #8B7FFF;
+    --wave-soft: #7C6FFF;
+    --barrier: #FF8A66;
+    --text: #F1F0FF;
+    --text-dim: #9B9CC4;
+    --text-faint: #676C8F;
+    --line: #232A47;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% -10%, #1a2240 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 20px 80px;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    max-width: 720px;
+    text-align: center;
+    padding: 72px 0 24px;
+  }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--wave);
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: clamp(32px, 5vw, 52px);
+    line-height: 1.15;
+    margin: 0 0 22px;
+    letter-spacing: -0.01em;
+  }
+  h1 em {
+    font-style: normal;
+    color: var(--wave);
+  }
+  .lede {
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--text-dim);
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  /* ---------- STAGE (canvas + controls) ---------- */
+  .stage {
+    width: 100%;
+    max-width: 860px;
+    margin-top: 36px;
+    background: linear-gradient(180deg, var(--bg-panel) 0%, var(--bg-panel-2) 100%);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 28px;
+  }
+
+  canvas {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 800 / 360;
+    display: block;
+    border-radius: 10px;
+    background: #080B16;
+    filter: drop-shadow(0 0 24px rgba(139, 127, 255, 0.08));
+  }
+
+  @media (max-width: 480px) {
+    .stage { padding: 18px; }
+    h1 { font-size: 28px; }
+    .lede { font-size: 16px; }
+    .preset { font-size: 12px; padding: 8px 12px; }
+    .controls { grid-template-columns: 1fr 1fr; gap: 16px; }
+  }
+
+  .readout {
+    display: flex;
+    gap: 24px;
+    margin-top: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+  .readout span { color: var(--text-dim); }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px 28px;
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+  .control label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .control label span {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--wave);
+  }
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--wave-soft);
+  }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  button {
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 12px 22px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  button:hover { border-color: var(--wave-soft); color: var(--wave); }
+  #startBtn {
+    background: var(--wave-soft);
+    border-color: var(--wave-soft);
+    color: #0B0F1E;
+  }
+  #startBtn:hover { background: var(--wave); color: #0B0F1E; }
+
+  /* ---------- CONTENT SECTIONS ---------- */
+  .content {
+    max-width: 640px;
+    margin-top: 64px;
+  }
+  .content h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 16px;
+  }
+  .content p {
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--text-dim);
+    margin: 0 0 16px;
+  }
+  .content p strong { color: var(--text); font-weight: 600; }
+
+  .section-gap { margin-top: 48px; }
+
+  .tips {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .tips li {
+    background: var(--bg-panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text-dim);
+  }
+  .tips li strong {
+    color: var(--wave);
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 4px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  footer {
+    margin-top: 64px;
+    font-size: 13px;
+    color: var(--text-faint);
+    text-align: center;
+  }
+  footer a { color: var(--text-dim); }
+
+  .hook {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--wave);
+    margin-top: 18px;
+  }
+
+  .prob-bar {
+    display: flex;
+    height: 10px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 16px;
+    background: var(--bg-panel-2);
+  }
+  .prob-fill-r { background: var(--barrier); transition: width 0.12s linear; }
+  .prob-fill-t { background: var(--wave); transition: width 0.12s linear; }
+  .prob-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-top: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .prob-labels strong { color: var(--text); }
+
+  .presets {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+  }
+  .presets-label {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  .preset-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .preset { font-size: 13px; padding: 9px 14px; }
+  .preset.active { border-color: var(--wave); color: var(--wave); }
+  .preset-caption {
+    font-size: 13px;
+    color: var(--text-faint);
+    line-height: 1.55;
+    margin-top: 12px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
 </head>
 <body>
-  <h1>Квантовое туннелирование через барьер</h1>
-  <p>Метод Кранка–Николсон, 1D нестационарное уравнение Шрёдингера</p>
 
-  <canvas id="canvas" width="800" height="400"></canvas>
+  <div class="hero">
+    <div class="eyebrow">Явление, которое физики предпочли бы не объяснять на пальцах</div>
+    <h1>Пуля не пробьёт бетонную стену, а электрон иногда пробивает</h1>
+    <p class="lede">
+      <p class="hook">Без этого эффекта не светило бы Солнце, а в телефоне не было бы памяти — смотри почему.</p>
+      Не по трещине и не по щели, он просто оказывается по другую сторону,
+      будто стены там и не было. Этот расчёт прямо сейчас выполняется в вашем браузере. Подвигайте ползунки
+      и убедитесь сами.
+    </p>
+  </div>
 
-  <div class="controls">
-    <div class="control">
-      <label for="v0">Высота барьера V0: <span id="v0-value">15</span></label>
-      <input type="range" id="v0" min="0" max="30" step="0.5" value="15">
+  <div class="stage">
+    <canvas id="canvas" width="800" height="360"></canvas>
+
+    <div class="readout">
+      <div><span id="time-readout">t = 0.00</span></div>
+      <div><span id="norm-readout">вероятность = 1.0000</span></div>
     </div>
-    <div class="control">
-      <label for="width">Ширина барьера: <span id="width-value">1.0</span></label>
-      <input type="range" id="width" min="0.2" max="5" step="0.1" value="1.0">
+
+    <div class="prob-bar">
+      <div class="prob-fill-r" id="prob-fill-r" style="width:100%"></div>
+      <div class="prob-fill-t" id="prob-fill-t" style="width:0%"></div>
     </div>
-    <div class="control">
-      <label for="k0">Начальная скорость k0: <span id="k0-value">5</span></label>
-      <input type="range" id="k0" min="1" max="10" step="0.5" value="5">
+    <div class="prob-labels">
+      <span>Отразилось: <strong id="prob-r">—</strong></span>
+      <span>Прошло сквозь барьер: <strong id="prob-t">—</strong></span>
+    </div>
+
+    <div class="presets">
+      <div class="presets-label">Или выбери, что смоделировать</div>
+      <div class="preset-buttons">
+        <button class="preset" data-preset="sun">☀ Ядро Солнца</button>
+        <button class="preset" data-preset="flash">🔋 Флеш-память</button>
+        <button class="preset" data-preset="stm">🔬 Туннельный микроскоп</button>
+        <button class="preset" data-preset="alpha">☢ Альфа-распад</button>
+      </div>
+      <p class="preset-caption" id="preset-caption">Настрой параметры вручную ползунками или выбери готовый сценарий — пропорции энергии к барьеру подобраны для наглядности, не для точности.</p>
+    </div>
+
+    <div class="controls">
+      <div class="control">
+        <label for="v0">Высота стены <span id="v0-value">15</span></label>
+        <input type="range" id="v0" min="0" max="30" step="0.5" value="15">
+      </div>
+      <div class="control">
+        <label for="width">Толщина стены <span id="width-value">1.0</span></label>
+        <input type="range" id="width" min="0.2" max="5" step="0.1" value="1.0">
+      </div>
+      <div class="control">
+        <label for="k0">Скорость частицы <span id="k0-value">5</span></label>
+        <input type="range" id="k0" min="1" max="10" step="0.5" value="5">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="startBtn">Запустить</button>
+      <button id="resetBtn">Сбросить</button>
+    </div>
+  </div>
+  
+  <div class="content">
+    <h2>Что такое эта волна на экране</h2>
+    <p>
+      У электрона нет точного положения в пространстве — только вероятность
+      оказаться в той или иной точке, если его всё же попытаться поймать.
+      Фиолетовая кривая как раз и показывает эту вероятность: чем она выше,
+      тем больше шанс найти там частицу. Оранжевая полоса — барьер, который
+      частица пытается преодолеть.
+    </p>
+    <p>
+      Долетев до барьера, волна не обязана останавливаться целиком. Часть её
+      проходит насквозь и продолжает путь по другую сторону, это происходит потому, что на таких масштабах у частицы просто есть
+      шанс оказаться там, куда её, по всем классическим законам, пускать не должны.
+    </p>
+
+    <div class="section-gap">
+      <h2>Проверь себя</h2>
+      <p>Прежде чем читать дальше, попробуй подобрать параметры под эти условия:</p>
+      <ul class="tips">
+        <li><strong>Задача 1</strong>Сделай так, чтобы больше половины частицы прошло сквозь барьер.</li>
+        <li><strong>Задача 2</strong>Теперь наоборот — почти ничего не должно пройти. Насколько высоким должен быть барьер?</li>
+        <li><strong>Задача 3</strong>Оставь барьер прежним и меняй только скорость частицы — как быстро растёт вероятность прохождения?</li>
+      </ul>
+    </div>
+
+    <div class="section-gap">
+      <h2>Это не абстракция</h2>
+      <p>
+        Солнце светит благодаря этому же эффекту: ядра атомов сближаются
+        и сливаются, преодолевая взаимное отталкивание за счёт туннелирования.
+        Флеш-память в телефоне работает по той же причине. Альфа-распад
+        радиоактивных элементов — тоже: ядро проходит сквозь барьер, который
+        по классическим законам физики должен быть непроходимым.
+      </p>
     </div>
   </div>
 
-  <button id="startBtn">Запустить</button>
-  <button id="resetBtn">Сбросить</button>
+    <div class="section-gap">
+      <h2>Что попробовать</h2>
+      <ul class="tips">
+        <li><strong>Высота стены</strong>Сделай стену пониже — и частица начнёт проходить почти свободно. Подними повыше — почти всё будет отражаться.</li>
+        <li><strong>Толщина стены</strong>Тонкую стену пройти легче, чем толстую — вероятность прохождения падает очень быстро с толщиной.</li>
+        <li><strong>Скорость частицы</strong>Более быстрая частица несёт больше энергии и охотнее преодолевает препятствие.</li>
+      </ul>
+    </div>
+
+    <div class="section-gap">
+      <h2>Зачем это нужно в реальной жизни</h2>
+      <p>
+        Туннелирование — не просто красивая теория. Именно благодаря ему светит Солнце
+        (ядра атомов сближаются, преодолевая отталкивание, только за счёт туннельного эффекта),
+        работает флеш-память в телефонах и компьютерах, и устроены сканирующие туннельные
+        микроскопы, которые "видят" отдельные атомы.
+      </p>
+    </div>
+  </div>
+
+  <footer>
+    Расчёт ведётся методом Кранка–Николсон в реальном времени, прямо в браузере ·
+    <a href="https://github.com/akhilgovarr-ai/quantumtunnelingvisualizer" target="_blank">исходный код на GitHub</a>
+  </footer>
 
   <script src="solver.js"></script>
   <script src="render.js"></script>
 </body>
-</html>
+</html> 
