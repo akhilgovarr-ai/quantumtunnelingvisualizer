@@ -137,11 +137,21 @@ function drawFrame() {
 // ============================================================
 // Цикл анимации
 // ============================================================
+let lastFrameTime = performance.now();
+
 function animate() {
   if (!isRunning) return;
-  for (let i = 0; i < 5; i++) {
+
+  const now = performance.now();
+  const elapsed = now - lastFrameTime;
+  lastFrameTime = now;
+
+  // на медленном устройстве кадры реже, но шагов больше за раз — скорость эволюции одинаковая для всех
+  const stepsThisFrame = Math.max(1, Math.round((elapsed / 1000) * 500));
+  for (let i = 0; i < Math.min(stepsThisFrame, 30); i++) {
     solver.step();
   }
+
   drawFrame();
   requestAnimationFrame(animate);
 }
@@ -180,5 +190,16 @@ document.getElementById("resetBtn").addEventListener("click", () => {
     drawFrame();
   });
 });
+
+const feedback = document.getElementById("task-feedback");
+  if (feedback) {
+    if (tPct > 50) {
+      feedback.textContent = "✓ Задача 1 выполнена — больше половины прошло сквозь барьер";
+    } else if (tPct < 2 && solver.time > 2) {
+      feedback.textContent = "✓ Задача 2 выполнена — почти ничего не прошло";
+    } else {
+      feedback.textContent = "";
+    }
+  }
 
 drawFrame();
