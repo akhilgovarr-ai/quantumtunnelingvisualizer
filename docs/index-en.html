@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Tunneling — how a particle passes through a wall</title>
+<meta name="description" content="Interactive visualization of quantum tunneling: how a particle passes through a barrier that classically shouldn't be crossable. Live real-time computation using the Crank-Nicolson method.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%230B0F1E'/%3E%3Cpath d='M10 60 Q30 20 50 60 T90 60' stroke='%238B7FFF' stroke-width='6' fill='none'/%3E%3Crect x='55' y='20' width='8' height='60' fill='%23FF8A66'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0B0F1E;
+    --bg-panel: #131A2E;
+    --bg-panel-2: #0F1526;
+    --wave: #8B7FFF;
+    --wave-soft: #7C6FFF;
+    --barrier: #FF8A66;
+    --text: #F1F0FF;
+    --text-dim: #9B9CC4;
+    --text-faint: #676C8F;
+    --line: #232A47;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% -10%, #1a2240 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 20px 80px;
+  }
+
+  .hero { max-width: 720px; text-align: center; padding: 72px 0 24px; }
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--wave); margin-bottom: 18px;
+  }
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700; font-size: clamp(32px, 5vw, 52px);
+    line-height: 1.15; margin: 0 0 22px; letter-spacing: -0.01em;
+  }
+  h1 em { font-style: normal; color: var(--wave); }
+  .lede { font-size: 18px; line-height: 1.65; color: var(--text-dim); max-width: 560px; margin: 0 auto; }
+  .hook {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px; color: var(--wave); margin-top: 18px;
+    padding: 8px 14px; background: rgba(139, 127, 255, 0.1);
+    border: 1px solid rgba(139, 127, 255, 0.25); border-radius: 20px;
+  }
+
+  .stage {
+    width: 100%; max-width: 860px; margin-top: 36px;
+    background: linear-gradient(180deg, var(--bg-panel) 0%, var(--bg-panel-2) 100%);
+    border: 1px solid var(--line); border-radius: 16px; padding: 28px;
+  }
+  canvas {
+    width: 100%; height: auto; aspect-ratio: 800 / 360;
+    display: block; border-radius: 10px; background: #080B16;
+    filter: drop-shadow(0 0 24px rgba(139, 127, 255, 0.08));
+  }
+  .readout { display: flex; gap: 24px; margin-top: 14px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-faint); }
+  .readout span { color: var(--text-dim); }
+
+  .prob-bar { display: flex; height: 10px; border-radius: 6px; overflow: hidden; margin-top: 16px; background: var(--bg-panel-2); }
+  .prob-fill-r { background: var(--barrier); transition: width 0.12s linear; }
+  .prob-fill-t { background: var(--wave); transition: width 0.12s linear; }
+  .prob-labels { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-dim); margin-top: 8px; font-family: 'IBM Plex Mono', monospace; }
+  .prob-labels strong { color: var(--text); }
+
+  .presets { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line); }
+  .presets-label { font-size: 13px; color: var(--text-dim); margin-bottom: 10px; }
+  .preset-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+  .preset {
+    font-size: 13px; font-weight: 500; padding: 9px 14px; border-radius: 20px;
+    border: 1px solid var(--line); background: var(--bg-panel-2); color: var(--text-dim);
+    font-family: 'Inter', sans-serif; cursor: pointer;transition: all 0.15s ease;
+}
+.preset:hover { border-color: var(--wave-soft); color: var(--wave); }
+.preset.active { border-color: var(--wave); color: var(--wave); background: rgba(139, 127, 255, 0.1); }
+.preset-caption { font-size: 13px; color: var(--text-faint); line-height: 1.55; margin-top: 12px; }
+
+.disclaimer {
+  margin-top: 16px; padding: 12px 16px; background: rgba(139, 127, 255, 0.08);
+  border: 1px solid rgba(139, 127, 255, 0.25); border-radius: 8px;
+  font-size: 13px; line-height: 1.5; color: var(--text-dim);
+}
+.disclaimer strong { color: var(--wave); }
+
+.controls {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 20px 28px; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--line);
+}
+.control label { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-dim); margin-bottom: 8px; }
+.control label span { font-family: 'IBM Plex Mono', monospace; color: var(--wave); }
+input[type="range"] { width: 100%; accent-color: var(--wave-soft); }
+
+.actions { display: flex; gap: 12px; margin-top: 24px; }
+button { font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.15s ease; }
+#startBtn, #resetBtn {
+  font-weight: 600; font-size: 15px; padding: 13px 26px; border-radius: 9px;
+  border: 1px solid var(--line); background: transparent; color: var(--text);
+}
+#startBtn:hover, #resetBtn:hover { border-color: var(--wave-soft); color: var(--wave); }
+#startBtn { background: var(--wave-soft); border-color: var(--wave-soft); color: #0B0F1E; }
+#startBtn:hover { background: var(--wave); color: #0B0F1E; }
+
+.divider {
+  width: 100%; max-width: 640px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line), transparent);
+  margin-top: 56px;
+}
+
+.content { max-width: 640px; margin-top: 64px; }
+.content h2 { font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 600; margin: 0 0 16px; }
+.content p { font-size: 16px; line-height: 1.75; color: var(--text-dim); margin: 0 0 16px; }
+.content p strong { color: var(--text); font-weight: 600; }
+.section-gap { margin-top: 48px; }
+
+.tips { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+.tips li {
+  background: var(--bg-panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 16px 18px; font-size: 15px; line-height: 1.6; color: var(--text-dim);
+}
+.tips li strong {
+  color: var(--wave); font-family: 'IBM Plex Mono', monospace; font-weight: 500;
+  display: block; margin-bottom: 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em;
+}
+.task-feedback { font-size: 13px; color: #7FE0A0; font-family: 'IBM Plex Mono', monospace; margin-top: 20px; min-height: 18px; }
+
+footer { margin-top: 64px; font-size: 13px; color: var(--text-faint); text-align: center; }
+footer a { color: var(--text-dim); }
+
+@media (max-width: 480px) {
+  .stage { padding: 18px; }
+  h1 { font-size: 28px; }
+  .lede { font-size: 16px; }
+  .preset { font-size: 12px; padding: 8px 12px; }
+  .controls { grid-template-columns: 1fr 1fr; gap: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+    <div class="hero">
+        <div class="eyebrow">Not a textbook diagram. A live calculation, running in your browser</div>
+        <h1>A bullet won't pass through a concrete wall. An electron sometimes does</h1>
+        <p class="lede">
+          Not through a crack, not through a gap — it just ends up on the other side,
+          as if the wall wasn't there. This isn't a thought experiment, it's a calculation
+          running right now, in real time. Drag the sliders and see for yourself.
+        </p>
+        <p class="hook">This is why the Sun shines, and why your phone has flash memory.</p>
+      </div>
+    
+      <div class="stage">
+        <canvas id="canvas" width="800" height="360"></canvas>
+        <div class="readout" aria-live="polite" role="status">
+          <div><span id="time-readout">t = 0.00</span></div>
+          <div><span id="norm-readout">probability = 1.0000</span></div>
+        </div>
+    
+        <div class="prob-bar">
+          <div class="prob-fill-r" id="prob-fill-r" style="width:100%"></div>
+          <div class="prob-fill-t" id="prob-fill-t" style="width:0%"></div>
+        </div>
+        <div class="prob-labels" aria-live="polite" role="status">
+          <span>Reflected: <strong id="prob-r">—</strong></span>
+          <span>Passed through: <strong id="prob-t">—</strong></span>
+        </div>
+    
+        <div class="presets">
+          <div class="presets-label">Or pick a real system to simulate</div>
+          <div class="preset-buttons">
+            <button class="preset" data-preset="sun">☀ Sun's core</button>
+            <button class="preset" data-preset="flash">🔋 Flash memory</button>
+            <button class="preset" data-preset="stm">🔬 Tunneling microscope</button>
+            <button class="preset" data-preset="alpha">☢ Alpha decay</button>
+          </div>
+          <p class="preset-caption" id="preset-caption">Pick a preset, or set the sliders yourself.</p>
+        </div>
+    
+        <div class="disclaimer">
+          <strong>Note:</strong> the slider values are unitless model parameters, not volts or nanometers.
+          What matters is the ratio between barrier height and particle energy, not the raw numbers.
+        </div>
+    
+        <div class="controls">
+          <div class="control">
+            <label for="v0">Wall height <span id="v0-value">15</span></label>
+            <input type="range" id="v0" min="0" max="30" step="0.5" value="15">
+          </div>
+          <div class="control">
+            <label for="width">Wall thickness <span id="width-value">1.0</span></label>
+            <input type="range" id="width" min="0.2" max="5" step="0.1" value="1.0">
+          </div>
+          <div class="control">
+            <label for="k0">Particle speed <span id="k0-value">5</span></label>
+            <input type="range" id="k0" min="1" max="10" step="0.5" value="5">
+          </div>
+        </div>
+    
+        <div class="actions">
+          <button id="startBtn">Run</button>
+          <button id="resetBtn">Reset</button>
+        </div>
+      </div>
+    
+      <div class="divider"></div>
+
+      <div class="content">
+        <h2>What's that wave on the screen</h2>
+        <p>
+          An electron doesn't have an exact position in space — only a probability of being
+          found at any given point. The purple curve is exactly that probability: the higher
+          it is somewhere, the more likely you'd find the particle there. The orange bar is
+          the barrier the particle is trying to cross.
+        </p>
+        <p>
+          Once the wave reaches the barrier, it doesn't have to stop entirely. Part of it
+          passes through and keeps going on the other side — not because it found some
+          hidden gap, but because at this scale the particle genuinely has a chance of
+          ending up somewhere classical physics says it shouldn't.
+        </p>
+    
+        <div class="section-gap">
+          <h2>Try it yourself</h2>
+          <p>Before reading on, try to hit these targets with the sliders:</p>
+          <ul class="tips">
+            <li><strong>Challenge 1</strong>Get more than half the particle to pass through the barrier.</li>
+            <li><strong>Challenge 2</strong>Now the opposite — almost nothing should get through. How high does the wall need to be?</li>
+            <li><strong>Challenge 3</strong>Keep the wall fixed, only change the particle's speed. How fast does the transmission probability grow?</li>
+          </ul>
+          <p class="task-feedback" id="task-feedback" aria-live="polite"></p>
+        </div>
+    
+        <div class="section-gap">
+          <h2>This isn't just theory</h2>
+          <p>
+            The Sun shines because of this exact effect: atomic nuclei get close enough
+            to fuse only by tunneling through the electrostatic repulsion between them.
+            Flash memory in your phone works the same way. So does alpha decay in
+            radioactive elements — the nucleus passes through a barrier that classical
+            physics says should be impossible to cross.
+          </p>
+        </div>
+      </div>
+    
+      <footer>
+        Computed live in your browser using the Crank-Nicolson method ·
+        <a href="https://github.com/akhilgovarr-ai/quantumtunnelingvisualizer" target="_blank">source code on GitHub</a> ·
+        <a href="index.html">Русская версия</a>
+      </footer>
+    
+      <script src="solver.js"></script>
+      <script src="render-en.js"></script>
+    </body>
+    </html>
