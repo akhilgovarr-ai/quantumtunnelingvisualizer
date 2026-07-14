@@ -132,6 +132,17 @@ function drawFrame() {
   document.getElementById("prob-fill-r").style.width = `${Math.max(100 - tPct, 0)}%`;
   document.getElementById("prob-t").textContent = `${(transmitted * 100).toFixed(1)}%`;
   document.getElementById("prob-r").textContent = `${(reflected * 100).toFixed(1)}%`;
+  
+  const feedback = document.getElementById("task-feedback");
+if (feedback) {
+  if (tPct > 50) {
+    feedback.textContent = "✓ Задача 1 выполнена — больше половины прошло сквозь барьер";
+  } else if (tPct < 2 && solver.time > 2) {
+    feedback.textContent = "✓ Задача 2 выполнена — почти ничего не прошло";
+  } else {
+    feedback.textContent = "";
+  }
+}
 }
 
 // ============================================================
@@ -190,16 +201,5 @@ document.getElementById("resetBtn").addEventListener("click", () => {
     drawFrame();
   });
 });
-
-const feedback = document.getElementById("task-feedback");
-  if (feedback) {
-    if (tPct > 50) {
-      feedback.textContent = "✓ Задача 1 выполнена — больше половины прошло сквозь барьер";
-    } else if (tPct < 2 && solver.time > 2) {
-      feedback.textContent = "✓ Задача 2 выполнена — почти ничего не прошло";
-    } else {
-      feedback.textContent = "";
-    }
-  }
 
 drawFrame();
