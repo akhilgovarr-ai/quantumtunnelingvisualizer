@@ -82,6 +82,23 @@ function drawFrame() {
     return ((xVal - solver.xMin) / (solver.xMax - solver.xMin)) * W;
   }
 
+  // --- барьер: заливка + линия ---
+  const barrierGradient = ctx.createLinearGradient(0, H, 0, 0);
+  barrierGradient.addColorStop(0, "rgba(255, 138, 102, 0.25)");
+  barrierGradient.addColorStop(1, "rgba(255, 138, 102, 0.02)");
+
+  ctx.beginPath();
+  ctx.moveTo(xToPixel(solver.x[0]), H);
+  for (let i = 0; i < solver.N; i++) {
+    const px = xToPixel(solver.x[i]);
+    const py = H - (V[i] / maxV) * (H * 0.5);
+    ctx.lineTo(px, py);
+  }
+  ctx.lineTo(xToPixel(solver.x[solver.N - 1]), H);
+  ctx.closePath();
+  ctx.fillStyle = barrierGradient;
+  ctx.fill();
+
   ctx.beginPath();
   ctx.strokeStyle = "rgba(255, 138, 102, 0.9)";
   ctx.lineWidth = 2;
@@ -93,16 +110,60 @@ function drawFrame() {
   }
   ctx.stroke();
 
+  // --- волна: заливка с градиентом + свечение на линии ---
+  const waveGradient = ctx.createLinearGradient(0, H, 0, 0);
+  waveGradient.addColorStop(0, "rgba(139, 127, 255, 0.35)");
+  waveGradient.addColorStop(1, "rgba(139, 127, 255, 0.03)");
+
+  function waveY(i) {
+    return H - (density[i] / maxDensity) * (H * 0.85) - 10;
+  }
+
   ctx.beginPath();
+  ctx.moveTo(xToPixel(solver.x[0]), H);
+  for (let i = 0; i < solver.N; i++) {
+    ctx.lineTo(xToPixel(solver.x[i]), waveY(i));
+  }
+  ctx.lineTo(xToPixel(solver.x[solver.N - 1]), H);
+  ctx.closePath();
+  ctx.fillStyle = waveGradient;
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.shadowColor = "rgba(139, 127, 255, 0.6)";
+  ctx.shadowBlur = 8;
   ctx.strokeStyle = "rgba(139, 127, 255, 1)";
   ctx.lineWidth = 2;
   for (let i = 0; i < solver.N; i++) {
     const px = xToPixel(solver.x[i]);
-    const py = H - (density[i] / maxDensity) * (H * 0.85) - 10;
+    const py = waveY(i);
     if (i === 0) ctx.moveTo(px, py);
     else ctx.lineTo(px, py);
   }
   ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // --- точка: самое вероятное место частицы ---
+  let maxIdx = 0;
+  for (let i = 1; i < solver.N; i++) {
+    if (density[i] > density[maxIdx]) maxIdx = i;
+  }
+  const dotX = xToPixel(solver.x[maxIdx]);
+  const dotY = waveY(maxIdx);
+  ctx.beginPath();
+  ctx.arc(dotX, dotY - 6, 4, 0, Math.PI * 2);
+  ctx.fillStyle = "#ffffff";
+  ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
+  ctx.shadowBlur = 6;
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // --- подписи прямо на графике ---
+  ctx.font = "12px 'IBM Plex Mono', monospace";
+  ctx.fillStyle = "rgba(255, 138, 102, 0.9)";
+  ctx.fillText("wall", xToPixel(solver.barrierStart + solver.barrierWidth) + 8, 20);
+  ctx.fillStyle = "rgba(200, 195, 255, 0.7)";
+  ctx.fillText("particle most likely here", dotX + 10, dotY - 6);
 
   document.getElementById("time-readout").textContent = `t = ${solver.time.toFixed(2)}`;
   document.getElementById("norm-readout").textContent = `probability = ${solver.getNorm().toFixed(4)}`;
