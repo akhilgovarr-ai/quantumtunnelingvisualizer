@@ -7,6 +7,25 @@
 
 **Живая демонстрация:** https://akhilgovarr-ai.github.io/quantumtunnelingvisualizer/
 
+## Research Question
+
+How do the Crank–Nicolson and Split-Step Fourier methods compare in accuracy, stability, probability conservation and computational performance when simulating one-dimensional quantum tunneling?
+
+**Comparison metrics:**
+- Transmission coefficient (T)
+- Reflection coefficient (R)
+- Norm conservation
+- Numerical error
+- Convergence rate
+- Computational time
+- Dependence on Δx
+- Dependence on Δt
+
+**Physical model:**
+- 1D time-dependent Schrödinger equation
+- Initial state: Gaussian wave packet
+- Potential: rectangular potential barrier
+
 ## Цель проекта
 
 - [x] Реализовать метод Crank–Nicolson для 1D TDSE
