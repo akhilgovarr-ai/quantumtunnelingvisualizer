@@ -1,4 +1,4 @@
-# quantumtunnelingvisualizer
+# Numerical Study of One-Dimensional Quantum Tunneling
 1D quantum tunneling visualizer (Crank-Nicolson / Split-Step Fourier)
 
 Визуализация квантового туннелирования частицы через потенциальный барьер:
