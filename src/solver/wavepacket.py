@@ -9,9 +9,33 @@ x = np.linspace(x_min, x_max, N)
 dx = x[1] - x[0]    # шаг сетки
 
 # --- Параметры начального волнового пакета ---
-x0 = -10.0          # начальный центр пакета (слева, чтобы двигался к барьеру справа)
+def gaussian_wavepacket(x, x0, k0, sigma):
+    """
+    Normalized 1D Gaussian wave packet.
+
+    Parameters
+    ----------
+    x : ndarray
+        Spatial grid.
+    x0 : float
+        Initial mean position.
+    k0 : float
+        Initial mean wavenumber (mean momentum p0 = hbar * k0, with hbar = 1 in this mode).
+    sigma : float
+        Initial spatial width.
+
+    Returns
+    -------
+    ndarray (complex)
+        Normalized wavefunction psi(x, 0).
+    """
+    norm = (2 * np.pi * sigma**2) ** (-0.25)
+    return norm * np.exp(-(x - x0)**2 / (4 * sigma**2)) * np.exp(1j * k0 * x)
+
+# --- Параметры начального волнового пакета (dimensionless mode: hbar = 1, m = 1) ---
+x0 = -10.0          # начальный центр пакета
 sigma = 1.0         # ширина пакета
-k0 = 5.0            # начальный "импульс" (задаёт скорость движения пакета)
+k0 = 5.0            # начальный волновой вектор
 
 # --- Параметры барьера ---
 V0 = 15.0        # высота барьера (чем больше, тем сильнее отражение)
@@ -22,7 +46,7 @@ barrier_width = 1.0    # ширина барьера
 V = np.zeros_like(x)
 V[(x >= barrier_start) & (x <= barrier_start + barrier_width)] = V0
 # --- Собираем гауссов волновой пакет ---
-psi0 = np.exp(-(x - x0)**2 / (4 * sigma**2)) * np.exp(1j * k0 * x)
+psi0 = gaussian_wavepacket(x, x0, k0, sigma)
 
 # --- Нормировка: делаем так, чтобы интеграл |psi|^2 dx = 1 ---
 norm = np.sqrt(np.sum(np.abs(psi0)**2) * dx)
