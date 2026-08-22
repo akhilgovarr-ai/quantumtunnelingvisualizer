@@ -88,3 +88,13 @@ CN is more accurate for discontinuous (rectangular) potentials because SSF (spec
 ## Boundary Conditions
 
 Currently: reflecting boundaries (finite box). Wave reaching the domain edge will reflect back. For quantitative studies, the domain should be large enough that the wave packet does not reach the boundary during the simulation time.
+
+## Convergence Study
+
+A convergence study was performed for N = 250, 500, 1000, 2000, 4000 grid points.
+
+For the rectangular barrier:
+- **Crank-Nicolson** shows monotonic convergence: error decreases from 0.0193 to 0.0009 as N increases.
+- **Split-Step Fourier** does not show systematic convergence: error oscillates around 0.004-0.010 due to Gibbs oscillations at the discontinuous potential.
+
+This confirms that CN is the preferred method for discontinuous (rectangular) potentials.
