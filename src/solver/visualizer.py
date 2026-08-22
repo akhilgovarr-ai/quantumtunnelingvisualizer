@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.sparse import diags
-from scipy.sparse.linalg import spsolve
 from matplotlib.animation import FuncAnimation, PillowWriter
 
 from wavepacket import gaussian_wavepacket
@@ -37,27 +35,22 @@ dt = 0.01
 n_steps = 400
 save_every = 20
 
-# --- Гамильтониан (безразмерные единицы: hbar = 1, m = 1) ---
-main_diag = V + 1.0 / dx**2
-off_diag = -0.5 / dx**2 * np.ones(N - 1)
-H = diags([off_diag, main_diag, off_diag], offsets=[-1, 0, 1], format="csc")
+# --- Импорт солвера ---
+from crank_nicolson import run_crank_nicolson
 
-# --- Матрицы Кранка-Николсона ---
-I = diags([np.ones(N)], offsets=[0], format="csc")
-A = I + 1j * dt / 2 * H
-B = I - 1j * dt / 2 * H
-
-# --- Эволюция ---
+# --- Эволюция с сохранением кадров ---
 psi = psi0.copy()
 norm_history = []
 frames = [np.abs(psi)**2]
 
-for step in range(n_steps):
-    psi = spsolve(A, B @ psi)
+for step in range(1, n_steps + 1):
+    # Один шаг CN
+    psi = run_crank_nicolson(psi, V, x, dt, 1)
+    
     current_norm = np.sum(np.abs(psi)**2) * dx
     norm_history.append(current_norm)
 
-    if (step + 1) % save_every == 0:
+    if step % save_every == 0:
         frames.append(np.abs(psi)**2)
 
 print(f"Сохранено кадров для анимации: {len(frames)}")
