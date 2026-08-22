@@ -17,7 +17,7 @@ x_min, x_max, N = -20.0, 20.0, 1000
 x = np.linspace(x_min, x_max, N)
 dx = x[1] - x[0]
 
-x0, sigma, k0 = -10.0, 1.0, 5.0
+x0, sigma, k0 = -10.0, 3.0, 5.0
 V0, barrier_start, barrier_width = 15.0, 0.0, 1.0
 
 # Потенциал и начальное состояние
@@ -84,3 +84,19 @@ print(f"\nE_packet = {k0**2 / 2:.4f}")
 print(f"V0 = {V0:.4f}")
 print(f"dx = {dx:.3e}")
 print(f"dt = {dt:.3e}")
+
+# --- Сравнение с аналитикой ---
+from analytical import transmission_coefficient_rectangular
+
+E_packet = k0**2 / 2  # энергия пакета в безразмерных единицах
+T_analytical = transmission_coefficient_rectangular(E_packet, V0, barrier_width)
+
+print(f"\nАналитический T: {T_analytical:.4f}")
+print(f"CN:              {T_cn:.4f}  (ошибка: {abs(T_cn - T_analytical):.4f})")
+print(f"SSF:             {T_ssf:.4f}  (ошибка: {abs(T_ssf - T_analytical):.4f})")
+
+# --- Аналитика для разных энергий в пакете ---
+print("\nАналитический T для разных энергий:")
+for E_test in [5.0, 10.0, 12.5, 14.0, 16.0, 20.0]:
+    T_an = transmission_coefficient_rectangular(E_test, V0, barrier_width)
+    print(f"  E = {E_test:5.1f}  →  T = {T_an:.4f}")
