@@ -1,6 +1,7 @@
 # Numerical Study of One-Dimensional Quantum Tunneling
 
 [![Tests](https://github.com/akhilgovarr-ai/quantumtunnelingvisualizer/actions/workflows/test.yml/badge.svg)](https://github.com/akhilgovarr-ai/quantumtunnelingvisualizer/actions/workflows/test.yml)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22164464.svg)](https://doi.org/10.5281/zenodo.22164464)
 
 1D quantum tunneling simulator with two numerical methods:
 **Crank–Nicolson** and **Split-Step Fourier**.
