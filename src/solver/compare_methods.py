@@ -39,25 +39,13 @@ psi_cn = run_crank_nicolson(psi0, V, x, dt, n_steps)
 print("Считаю Split-Step Fourier...")
 psi_ssf = run_split_step_fourier(psi0, V, x, dt, n_steps)
 
-# --- Вычисление T и R ---
-from observables import compute_TR, compute_norm
+# --- Научное резюме ---
+from scientific_output import print_scientific_summary
 
-T_cn, R_cn = compute_TR(psi_cn, x, barrier_start, barrier_width)
-T_ssf, R_ssf = compute_TR(psi_ssf, x, barrier_start, barrier_width)
-
-# Проверка сохранения нормы
-norm_cn = compute_norm(psi_cn, x)
-norm_ssf = compute_norm(psi_ssf, x)
-print(f"\nНорма CN:  {norm_cn:.6f}")
-print(f"Норма SSF: {norm_ssf:.6f}")
-print(f"\nCrank-Nicolson:      T = {T_cn:.4f}, R = {R_cn:.4f}")
-print(f"Split-Step Fourier:  T = {T_ssf:.4f}, R = {R_ssf:.4f}")
-print(f"Разница по T: {abs(T_cn - T_ssf):.4f}")
-print(f"Разница по R: {abs(R_cn - R_ssf):.4f}")
+print_scientific_summary(psi_cn, psi_ssf, x, V, barrier_start, barrier_width, dt, n_steps, k0)
 
 # --- Разница между волновыми функциями ---
 diff = np.abs(np.abs(psi_cn)**2 - np.abs(psi_ssf)**2)
-print(f"Максимальная разница |ψ|² в точке: {diff.max():.2e}")
 
 # --- График ---
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 7), sharex=True)
@@ -68,35 +56,14 @@ ax1_v = ax1.twinx()
 ax1_v.plot(x, V, color="tab:red", linestyle=":", alpha=0.7)
 ax1_v.set_ylabel("V(x)", color="tab:red")
 ax1.set_ylabel(r"$|\psi(x,t)|^2$")
-ax1.set_title(f"Сравнение методов (t={n_steps*dt:.1f})")
+ax1.set_title(f"Comparison of methods (t={n_steps*dt:.1f})")
 ax1.legend(loc="upper left")
 
 ax2.plot(x, diff, color="black")
 ax2.set_xlabel("x")
-ax2.set_ylabel("|разница|")
-ax2.set_title("Абсолютная разница между методами в каждой точке")
+ax2.set_ylabel("|difference|")
+ax2.set_title("Absolute difference between methods at each point")
 
 fig.tight_layout()
 plt.savefig("figures/methods_comparison.png", dpi=150)
 plt.show()
-
-print(f"\nE_packet = {k0**2 / 2:.4f}")
-print(f"V0 = {V0:.4f}")
-print(f"dx = {dx:.3e}")
-print(f"dt = {dt:.3e}")
-
-# --- Сравнение с аналитикой ---
-from analytical import transmission_coefficient_rectangular
-
-E_packet = k0**2 / 2  # энергия пакета в безразмерных единицах
-T_analytical = transmission_coefficient_rectangular(E_packet, V0, barrier_width)
-
-print(f"\nАналитический T: {T_analytical:.4f}")
-print(f"CN:              {T_cn:.4f}  (ошибка: {abs(T_cn - T_analytical):.4f})")
-print(f"SSF:             {T_ssf:.4f}  (ошибка: {abs(T_ssf - T_analytical):.4f})")
-
-# --- Аналитика для разных энергий в пакете ---
-print("\nАналитический T для разных энергий:")
-for E_test in [5.0, 10.0, 12.5, 14.0, 16.0, 20.0]:
-    T_an = transmission_coefficient_rectangular(E_test, V0, barrier_width)
-    print(f"  E = {E_test:5.1f}  →  T = {T_an:.4f}")
