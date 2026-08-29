@@ -65,7 +65,7 @@ for N in [256, 512, 1024, 2048, 4096]:
         'SSF_norm_error': abs(norm_ssf - 1.0)
     })
     
-    print(f"N = {N:5d}")
+    print(f"N = {N:5d}") 
     print(f"  CN:  time = {t_cn:.4f}s, error = {error_cn:.6f}")
     print(f"  SSF: time = {t_ssf:.4f}s, error = {error_ssf:.6f}")
     print(f"  Speedup (SSF/CN): {t_cn/t_ssf:.2f}x")
