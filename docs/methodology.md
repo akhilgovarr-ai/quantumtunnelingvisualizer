@@ -117,3 +117,17 @@ Key findings:
 - SSF does not improve beyond error ~0.005 due to Gibbs oscillations at the discontinuous potential.
 
 **Conclusion:** For rectangular (discontinuous) potentials, CN is the preferred method when accuracy matters. SSF is useful for smooth potentials where spectral accuracy applies.
+
+## Parameter Sweep Results
+
+### Transmission vs Energy T(E)
+- For E < V0 (tunneling regime): excellent agreement between numerical and analytical results.
+- For E > V0 (above-barrier regime): slight deviations due to wave packet energy spread.
+
+### Transmission vs Barrier Height T(V0)
+- Good agreement in tunneling regime (V0 > E).
+- Deviations when V0 < E due to interference effects within the barrier.
+
+### Transmission vs Barrier Width T(a)
+- Exponential decay confirmed: T ∝ exp(-2κa).
+- For very wide barriers (a > 2), numerical error becomes comparable to T itself, limiting accuracy.
