@@ -3,103 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Numerical Study of One-Dimensional Quantum Tunneling</title>
+    <title>Quantum Tunneling | Numerical Study</title>
     
-    <!-- MathJax для формул -->
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    
+    <!-- MathJax -->
     <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     
     <style>
         :root {
-            --bg: #0a0a0f;
-            --surface: #12121a;
-            --text: #e0e0e0;
+            --bg: #0a0a12;
+            --surface: #12121e;
+            --card: #161627;
+            --text: #e8e8f0;
+            --text-secondary: #9999aa;
             --accent: #00d4ff;
+            --accent-glow: rgba(0, 212, 255, 0.15);
             --barrier: #ff6b6b;
-            --grid: #1e1e2a;
+            --barrier-glow: rgba(255, 107, 107, 0.15);
+            --grid: #1e1e2e;
+            --mono: 'JetBrains Mono', monospace;
         }
         
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             background: var(--bg);
             color: var(--text);
-            font-family: 'Georgia', 'Times New Roman', serif;
-            line-height: 1.7;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.8;
+            overflow-x: hidden;
         }
         
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-        
-        h1 {
-            font-size: 2.2em;
-            color: var(--accent);
+        /* ---------- Hero ---------- */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             text-align: center;
-            margin-bottom: 10px;
-            font-weight: bold;
+            padding: 60px 20px;
+            position: relative;
+            background: radial-gradient(ellipse at center, rgba(0,212,255,0.05) 0%, transparent 70%);
         }
         
-        .subtitle {
-            text-align: center;
-            font-size: 1.1em;
-            color: #999;
+        .hero h1 {
+            font-size: clamp(2em, 5vw, 3.5em);
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            letter-spacing: -0.02em;
+        }
+        
+        .hero .subtitle {
+            font-size: clamp(1em, 2vw, 1.3em);
+            color: var(--text-secondary);
+            font-family: var(--mono);
             margin-bottom: 30px;
-            font-style: italic;
         }
         
         .badges {
-            text-align: center;
-            margin: 20px 0 40px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
         }
         
-        .badges img {
-            margin: 0 5px;
+        .badges img { height: 25px; }
+        
+        .scroll-hint {
+            position: absolute;
+            bottom: 30px;
+            color: var(--text-secondary);
+            font-family: var(--mono);
+            font-size: 0.8em;
+            animation: bounce 2s infinite;
         }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+        }
+        
+        /* ---------- Canvas Simulation ---------- */
+        #waveCanvas {
+            width: 100%;
+            max-width: 800px;
+            height: 300px;
+            border-radius: 12px;
+            border: 1px solid var(--grid);
+            background: var(--surface);
+            margin: 20px 0;
+            cursor: crosshair;
+        }
+        
+        /* ---------- Container ---------- */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+        
+        /* ---------- Sections ---------- */
+        section { margin-bottom: 60px; }
         
         h2 {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 20px;
             color: var(--accent);
-            margin: 50px 0 20px;
-            font-size: 1.6em;
-            border-bottom: 2px solid var(--surface);
-            padding-bottom: 10px;
+            letter-spacing: -0.01em;
         }
         
         h3 {
-            color: #ccc;
-            margin: 25px 0 10px;
             font-size: 1.2em;
+            font-weight: 600;
+            margin: 25px 0 10px;
+            color: #ccc;
         }
         
-        p {
-            margin: 15px 0;
-        }
+        p { margin: 15px 0; color: var(--text); }
         
+        .text-secondary { color: var(--text-secondary); }
+        
+        /* ---------- Equation blocks ---------- */
         .equation {
-            background: var(--surface);
-            padding: 20px;
+            background: var(--card);
+            padding: 25px 20px;
             margin: 20px 0;
-            border-radius: 8px;
+            border-radius: 12px;
+            border: 1px solid var(--grid);
             text-align: center;
             overflow-x: auto;
-            font-size: 1.2em;
+            font-size: 1.15em;
         }
         
+        /* ---------- Cards ---------- */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--grid);
+            border-radius: 16px;
+            padding: 30px;
+            margin: 25px 0;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.08);
+        }
+        
+        .card h3 { margin-top: 0; color: var(--accent); }
+        
+        /* ---------- Tables ---------- */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
+            margin: 25px 0;
+            font-family: var(--mono);
+            font-size: 0.85em;
         }
         
         th, td {
-            padding: 10px 15px;
+            padding: 12px 15px;
             border: 1px solid var(--grid);
             text-align: center;
         }
@@ -107,237 +179,356 @@
         th {
             background: var(--surface);
             color: var(--accent);
+            font-weight: 600;
         }
         
-        tr:nth-child(even) {
-            background: var(--surface);
-        }
+        tr:nth-child(even) { background: var(--surface); }
         
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--grid);
-            border-radius: 12px;
-            padding: 30px;
-            margin: 30px 0;
-        }
+        tr:hover { background: var(--accent-glow); }
         
-        .citation {
-            background: var(--surface);
-            padding: 20px;
-            border-left: 4px solid var(--accent);
-            margin: 20px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85em;
-        }
-        
-        code {
-            background: #1a1a2e;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            color: var(--accent);
-        }
-        
-        .simulation-container {
+        /* ---------- Figures ---------- */
+        .figure-container {
             text-align: center;
             margin: 30px 0;
         }
-        
-        canvas {
-            background: var(--surface);
-            border: 1px solid var(--grid);
-            border-radius: 8px;
+
+        .figure-container img {
             max-width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--grid);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
         }
         
-        a {
-            color: var(--accent);
-            text-decoration: none;
+        .figure-caption {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.85em;
+            margin-top: 10px;
+            font-family: var(--mono);
         }
         
-        a:hover {
-            text-decoration: underline;
+        /* ---------- Citation ---------- */
+        .citation {
+            background: var(--card);
+            padding: 25px;
+            border-left: 4px solid var(--accent);
+            margin: 25px 0;
+            font-family: var(--mono);
+            font-size: 0.85em;
+            border-radius: 0 12px 12px 0;
         }
         
+        /* ---------- Links ---------- */
+        a { color: var(--accent); text-decoration: none; transition: color 0.3s; }
+        a:hover { color: #00ff88; text-decoration: underline; }
+        
+        /* ---------- Limitations ---------- */
         .limitations {
-            color: #bbb;
-            font-style: italic;
+            color: var(--text-secondary);
+            font-size: 0.95em;
         }
         
+        .limitations li { margin: 8px 0; list-style: none; }
+        .limitations li::before { content: '▸ '; color: var(--accent); }
+        
+        /* ---------- Smooth scroll ---------- */
+        html { scroll-behavior: smooth; }
+        
+        /* ---------- Mobile ---------- */
         @media (max-width: 600px) {
-            h1 { font-size: 1.6em; }
-            .container { padding: 20px 15px; }
+            .container { padding: 40px 15px; }
+            h1 { font-size: 1.8em; }
+            h2 { font-size: 1.4em; }
+            #waveCanvas { height: 200px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        
-        <h1>Numerical Study of One-Dimensional Quantum Tunneling</h1>
-        <p class="subtitle">Comparison of Crank-Nicolson and Split-Step Fourier Methods</p>
+
+    <!-- HERO -->
+    <div class="hero">
+        <h1>Quantum Tunneling</h1>
+        <div class="subtitle">Numerical Study of the 1D Schrödinger Equation</div>
         
         <div class="badges">
-            <a href="https://github.com/akhilgovarr-ai/quantumtunnelingvisualizer/actions/workflows/test.yml">
-                <img src="https://github.com/akhilgovarr-ai/quantumtunnelingvisualizer/actions/workflows/test.yml/badge.svg" alt="Tests">
-            </a>
-            <a href="https://doi.org/10.5281/zenodo.22164464">
-                <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.22164464.svg" alt="DOI">
-            </a>
-            <a href="https://github.com/akhilgovarr-ai/quantumtunnelingvisualizer/blob/main/LICENSE">
-                <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
-            </a>
+            <img src="https://github.com/akhilgovarr-ai/quantumtunnelingvisualizer/actions/workflows/test.yml/badge.svg" alt="Tests">
+            <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.22164464.svg" alt="DOI">
+            <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
         </div>
         
-        <h2>Abstract</h2>
-        <p>
-            We present a comparative numerical study of two methods for solving the one-dimensional 
-            time-dependent Schrödinger equation: the Crank-Nicolson (CN) finite-difference scheme and 
-            the Split-Step Fourier (SSF) spectral method. Both methods are validated against analytical 
-            results for quantum tunneling through a rectangular potential barrier. Our results show that 
-            CN achieves higher accuracy for discontinuous potentials, while SSF is consistently faster 
-            but suffers from Gibbs oscillations at potential edges.
-        </p>
+        <canvas id="waveCanvas"></canvas>
         
-        <h2>Physical Model</h2>
-        
-        <h3>Governing Equation</h3>
-        <div class="equation">
-            \[
-            i\hbar\frac{\partial\psi}{\partial t} = 
-            \left[-\frac{\hbar^2}{2m}\frac{\partial^2}{\partial x^2} + V(x)\right]\psi
-            \]
-        </div>
-        
-        <p>In dimensionless units (\(\hbar = 1\), \(m = 1\)):</p>
-        <div class="equation">
-            \[
-            i\frac{\partial\psi}{\partial t} = 
-            \left[-\frac{1}{2}\frac{\partial^2}{\partial x^2} + V(x)\right]\psi
-            \]
-        </div>
-        
-        <h3>Initial Condition: Gaussian Wave Packet</h3>
-        <div class="equation">
-            \[
-            \psi(x, 0) = \frac{1}{(2\pi\sigma^2)^{1/4}} 
-            \exp\left(-\frac{(x - x_0)^2}{4\sigma^2}\right) 
-            \exp(ik_0 x)
-            \]
-        </div>
-        
-        <h3>Potential: Rectangular Barrier</h3>
-        <div class="equation">
-            \[
-            V(x) = \begin{cases} 
-                V_0 & \text{for } x \in [x_b, x_b + a] \\
-                0 & \text{otherwise}
-            \end{cases}
-            \]
-        </div>
-        
-        <h2>Numerical Methods</h2>
-        
-        <h3>Crank-Nicolson Method</h3>
-        <p>
-            The CN scheme is an implicit finite-difference method, second-order accurate in space and time:
-        </p>
-        <div class="equation">
-            \[
-            A\psi^{n+1} = B\psi^n
-            \]
-        </div>
-        <p>where:</p>
-        <div class="equation">
-            \[
-            A = I + \frac{i\Delta t}{2}H, \quad B = I - \frac{i\Delta t}{2}H
-            \]
-        </div>
-        
-        <h3>Split-Step Fourier Method</h3>
-        <p>Each time step consists of three substeps (Strang splitting):</p>
-        <div class="equation">
-            \[
-            \psi \leftarrow \psi \cdot e^{-iV\Delta t/2}
-            \]
-            \[
-            \psi \leftarrow \text{IFFT}\left(\text{FFT}(\psi) \cdot e^{-ik^2\Delta t/2}\right)
-            \]
-            \[
-            \psi \leftarrow \psi \cdot e^{-iV\Delta t/2}
-            \]
-        </div>
-        
-        <h2>Key Results</h2>
-        
-        <h3>Benchmark Comparison</h3>
-        <table>
-            <tr>
-                <th>N</th>
-                <th>CN time (s)</th>
-                <th>SSF time (s)</th>
-                <th>CN error</th><th>SSF error</th>
-            </tr>
-            <tr><td>256</td><td>0.116</td><td>0.032</td><td>0.018</td><td>0.002</td></tr>
-            <tr><td>512</td><td>0.197</td><td>0.050</td><td>0.011</td><td>0.005</td></tr>
-            <tr><td>1024</td><td>0.175</td><td>0.082</td><td>0.0003</td><td>0.005</td></tr>
-            <tr><td>2048</td><td>0.571</td><td>0.174</td><td>0.001</td><td>0.011</td></tr>
-            <tr><td>4096</td><td>0.814</td><td>0.330</td><td>0.002</td><td>0.010</td></tr>
-        </table>
-        
-        <h3>Convergence Study</h3>
-        <div class="simulation-container">
-            <img src="../figures/fig4_convergence.png" alt="Convergence" style="max-width:100%; border-radius:8px;">
-        </div>
-        
-        <h3>Transmission vs Energy</h3>
-        <div class="simulation-container">
-            <img src="../figures/fig3_transmission_vs_energy.png" alt="T(E)" style="max-width:100%; border-radius:8px;">
-        </div>
-        
-        <h2>Validation</h2>
-        <p>
-            Both methods conserve total probability with error < 1e-13 over 400 time steps.
-            Analytical transmission coefficient validates numerical results in tunneling regime.
-        </p>
-        
-        <h2>Limitations</h2>
-        <p class="limitations">
-            • Model is one-dimensional
+        <div class="scroll-hint">scroll ↓</div>
+    </div>
 
-            • Non-relativistic quantum mechanics only
-
-            • Non-interacting particles
-
-            • Simple rectangular barrier (most experiments)
-
-            • Finite grid introduces numerical error
-
-            • Wave packet has energy spread (not truly monochromatic)
-        </p>
+    <!-- MAIN CONTENT -->
+    <div class="container">
         
-        <h2>Citation</h2>
-        <div class="citation">
-            Akhilgova, R. (2026). Numerical Study of One-Dimensional Quantum Tunneling. 
-            DOI: 10.5281/zenodo.22164464
-        </div>
+        <!-- Abstract -->
+        <section>
+            <h2>Abstract</h2>
+            <p>
+                We present a comparative numerical study of two methods for solving the one-dimensional 
+                time-dependent Schrödinger equation: the <strong>Crank-Nicolson</strong> (CN) finite-difference 
+                scheme and the <strong>Split-Step Fourier</strong> (SSF) spectral method. Both are validated 
+                against analytical results for quantum tunneling through a rectangular potential barrier.
+            </p>
+            <p class="text-secondary">
+                Key finding: CN achieves higher accuracy for discontinuous potentials, while SSF is 
+                2–4× faster but suffers from Gibbs oscillations at potential edges.
+            </p>
+        </section>
         
-        <h2>References</h2>
-        <p>
-            1. J. Crank, P. Nicolson (1947). "A practical method for numerical evaluation of solutions of partial differential equations." <em>Proc. Camb. Phil. Soc.</em>, 43(1), 50-67.
-
-            2. R. H. Hardin, F. D. Tappert (1973). "Applications of the split-step Fourier method." <em>SIAM Review</em>, 15(2), 423.
-
-            3. D. J. Griffiths. <em>Introduction to Quantum Mechanics</em>. Pearson.
-        </p>
+        <!-- Physical Model -->
+        <section>
+            <h2>Physical Model</h2>
+            
+            <h3>Governing Equation</h3>
+            <div class="equation">
+                \[i\hbar\frac{\partial\psi}{\partial t} = \left[-\frac{\hbar^2}{2m}\frac{\partial^2}{\partial x^2} + V(x)\right]\psi\]
+            </div>
+            
+            <p class="text-secondary">In dimensionless units (\(\hbar = 1\), \(m = 1\)):</p>
+            <div class="equation">
+                \[i\frac{\partial\psi}{\partial t} = \left[-\frac{1}{2}\frac{\partial^2}{\partial x^2} + V(x)\right]\psi\]
+            </div>
+            
+            <h3>Initial Condition: Gaussian Wave Packet</h3>
+            <div class="equation">
+                \[\psi(x, 0) = \frac{1}{(2\pi\sigma^2)^{1/4}} \exp\left(-\frac{(x - x_0)^2}{4\sigma^2}\right) \exp(ik_0 x)\]
+            </div>
+            
+            <h3>Potential: Rectangular Barrier</h3>
+            <div class="equation">
+                \[V(x) = \begin{cases} V_0 & \text{for } x \in [x_b, x_b + a] \\ 0 & \text{otherwise} \end{cases}\]
+            </div>
+        </section>
         
-        <h2>Links</h2>
-        <p>
-            <a href="https://github.com/akhilgovarr-ai/quantumtunnelingvisualizer">GitHub Repository</a> | 
-            <a href="https://doi.org/10.5281/zenodo.22164464">DOI: 10.5281/zenodo.22164464</a>
-        </p>
+        <!-- Numerical Methods -->
+        <section>
+            <h2>Numerical Methods</h2>
+            
+            <div class="card">
+                <h3>Crank-Nicolson Method</h3>
+                <p class="text-secondary">Implicit finite-difference, second-order accurate in space and time.</p>
+                <div class="equation">
+                    \[A\psi^{n+1} = B\psi^n\]
+                    \[A = I + \frac{i\Delta t}{2}H, \quad B = I - \frac{i\Delta t}{2}H\]
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Split-Step Fourier Method</h3>
+                <p class="text-secondary">Operator splitting with FFT (Strang splitting).</p>
+                <div class="equation">
+                    \[\psi \leftarrow \psi \cdot e^{-iV\Delta t/2}\]
+                    \[\psi \leftarrow \text{IFFT}\left(\text{FFT}(\psi) \cdot e^{-ik^2\Delta t/2}\right)\]
+                    \[\psi \leftarrow \psi \cdot e^{-iV\Delta t/2}\]
+                </div>
+            </div>
+        </section>
+        
+        <!-- Results -->
+        <section>
+            <h2>Key Results</h2>
+            
+            <h3>Benchmark Comparison</h3>
+            <table>
+                <tr><th>N</th><th>CN time (s)</th><th>SSF time (s)</th><th>CN error</th><th>SSF error</th></tr>
+                <tr><td>256</td><td>0.116</td><td>0.032</td><td>0.018</td><td>0.002</td></tr>
+                <tr><td>512</td><td>0.197</td><td>0.050</td><td>0.011</td><td>0.005</td></tr>
+                <tr><td>1024</td><td>0.175</td><td>0.082</td><td>0.0003</td><td>0.005</td></tr>
+                <tr><td>2048</td><td>0.571</td><td>0.174</td><td>0.001</td><td>0.011</td></tr>
+                <tr><td>4096</td><td>0.814</td><td>0.330</td><td>0.002</td><td>0.010</td></tr>
+            </table>
+            
+            <div class="figure-container">
+                <img src="../figures/fig4_convergence.png" alt="Convergence study">
+                <div class="figure-caption">Figure 1: Convergence study — error vs Δx</div>
+            </div>
+            
+            <div class="figure-container">
+                <img src="../figures/fig3_transmission_vs_energy.png" alt="T(E)">
+                <div class="figure-caption">Figure 2: Transmission coefficient vs energy</div>
+            </div>
+            <div class="figure-container">
+                <img src="../figures/fig1_initial_state.png" alt="Initial state">
+                <div class="figure-caption">Figure 3: Initial Gaussian wave packet and barrier</div>
+            </div>
+        </section>
+        
+        <!-- Validation -->
+        <section>
+            <h2>Validation</h2>
+            <div class="card">
+                <h3>Norm Conservation</h3>
+                <p>Both methods conserve total probability with error < 1e-13 over 400 time steps.</p>
+            </div>
+            <div class="card">
+                <h3>Analytical Comparison</h3>
+                <p>Using a wide Gaussian packet (σ = 3.0):</p>
+                <table>
+                    <tr><th>Method</th><th>T numerical</th><th>T analytical</th><th>Error</th></tr>
+                    <tr><td>Crank-Nicolson</td><td>0.0286</td><td>0.0253</td><td>0.0033</td></tr>
+                    <tr><td>Split-Step Fourier</td><td>0.0424</td><td>0.0253</td><td>0.0171</td></tr>
+                </table>
+            </div>
+        </section>
+        
+        <!-- Limitations -->
+        <section>
+            <h2>Limitations</h2>
+            <ul class="limitations">
+                <li>Model is one-dimensional</li>
+                <li>Non-relativistic quantum mechanics only</li>
+                <li>Non-interacting particles</li>
+                <li>Simple rectangular barrier (most experiments)</li>
+                <li>Finite grid introduces numerical error</li>
+                <li>Wave packet has energy spread (not truly monochromatic)</li>
+            </ul>
+        </section>
+
+        <!-- Citation -->
+        <section>
+            <h2>Citation</h2>
+            <div class="citation">
+                Akhilgova, R. (2026). Numerical Study of One-Dimensional Quantum Tunneling.
+
+                DOI: <a href="https://doi.org/10.5281/zenodo.22164464">10.5281/zenodo.22164464</a>
+            </div>
+        </section>
+        
+        <!-- References -->
+        <section>
+            <h2>References</h2>
+            <p class="text-secondary">
+                1. J. Crank, P. Nicolson (1947). <em>Proc. Camb. Phil. Soc.</em>, 43(1), 50-67.
+
+                2. R. H. Hardin, F. D. Tappert (1973). <em>SIAM Review</em>, 15(2), 423.
+
+                3. D. J. Griffiths. <em>Introduction to Quantum Mechanics</em>. Pearson.
+            </p>
+        </section>
+        
+        <!-- Footer -->
+        <footer style="text-align:center; padding:40px 0; color:var(--text-secondary); font-family:var(--mono); font-size:0.8em;">
+            <a href="https://github.com/akhilgovarr-ai/quantumtunnelingvisualizer">GitHub</a> | 
+            <a href="https://doi.org/10.5281/zenodo.22164464">DOI</a>
+        </footer>
         
     </div>
+
+    <!-- Canvas Animation Script -->
+    <script>
+        const canvas = document.getElementById('waveCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Параметры анимации
+        let t = 0;
+        const barrierPos = canvas.width * 0.6;
+        const barrierWidth = 40;
+        const barrierHeight = 80;
+        
+        function drawWave() {
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            // Очистка
+            ctx.fillStyle = '#12121e';
+            ctx.fillRect(0, 0, w, h);
+            
+            // Сетка
+            ctx.strokeStyle = '#1e1e2e';
+            ctx.lineWidth = 0.5;
+            for (let x = 0; x < w; x += 30) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
+            }
+            for (let y = 0; y < h; y += 30) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(w, y);
+                ctx.stroke();
+            }
+            
+            // Барьер
+            const barrierGradient = ctx.createLinearGradient(barrierPos, 0, barrierPos + barrierWidth, 0);
+            barrierGradient.addColorStop(0, 'rgba(255, 107, 107, 0.7)');
+            barrierGradient.addColorStop(0.5, 'rgba(255, 107, 107, 0.3)');
+            barrierGradient.addColorStop(1, 'rgba(255, 107, 107, 0.7)');
+            ctx.fillStyle = barrierGradient;
+            ctx.fillRect(barrierPos, h - barrierHeight, barrierWidth, barrierHeight);
+
+            // Волновая функция
+            ctx.beginPath();
+            const amplitude = h * 0.25;
+            const centerY = h * 0.5;
+            const waveWidth = 100;
+            const pos = 80 + t * 1.5;
+            
+            for (let x = 0; x < w; x++) {
+                const dx = (x - pos) / waveWidth;
+                const envelope = Math.exp(-dx * dx);
+                
+                // Туннелирование через барьер
+                let wave;
+                if (x < barrierPos) {
+                    wave = envelope * Math.sin(0.3 * x - t * 3);
+                } else if (x < barrierPos + barrierWidth) {
+                    const decay = Math.exp(-(x - barrierPos) / 20);
+                    wave = envelope * decay * Math.sin(0.3 * x - t * 2);
+                } else {
+                    wave = envelope * 0.15 * Math.sin(0.3 * x - t * 2);
+                }
+                
+                const y = centerY - wave * amplitude;
+                
+                if (x === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            
+            // Градиентная заливка
+            const gradient = ctx.createLinearGradient(0, centerY - amplitude, 0, centerY + amplitude);
+            gradient.addColorStop(0, 'rgba(0, 212, 255, 0.6)');
+            gradient.addColorStop(0.5, 'rgba(0, 212, 255, 0.1)');
+            gradient.addColorStop(1, 'rgba(0, 212, 255, 0.6)');
+            
+            ctx.strokeStyle = '#00d4ff';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#00d4ff';
+            ctx.shadowBlur = 15;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            
+            // Подпись
+            ctx.fillStyle = '#9999aa';
+            ctx.font = '12px JetBrains Mono, monospace';
+            ctx.fillText('Live wave function simulation', 20, 25);
+            
+            t += 0.03;
+            requestAnimationFrame(drawWave);
+        }
+        
+        drawWave();
+
+            // Реакция на курсор
+            canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            if (Math.abs(mouseX - barrierPos) < 100) {
+                t += 0.05; // Ускорение при наведении
+            }
+        });
+    </script>
+    
 </body>
 </html>
-```
